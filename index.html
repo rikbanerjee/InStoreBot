@@ -16,6 +16,22 @@
                 <i class="fas fa-robot"></i>
                 <span>InStore Bot</span>
             </div>
+            <div class="customer-stats">
+                <div class="level-badge">
+                    <i class="fas fa-star"></i>
+                    <span id="customerLevel">New Shopper</span>
+                </div>
+                <div class="points-display">
+                    <i class="fas fa-coins"></i>
+                    <span id="customerPoints">0</span> pts
+                </div>
+            </div>
+            <div class="mode-toggle">
+                <button class="mode-btn" id="modeToggle" onclick="toggleMode()">
+                    <i class="fas fa-user-tie"></i>
+                    <span id="modeText">Associate Mode</span>
+                </button>
+            </div>
             <div class="status">
                 <div class="status-indicator online"></div>
                 <span>Online & Ready to Help</span>
@@ -79,9 +95,41 @@
                         <i class="fas fa-fire"></i>
                         Hot Deals
                     </button>
+                    <button class="quick-btn" onclick="handleQuickAction('fun')">
+                        <i class="fas fa-gamepad"></i>
+                        Fun Mode
+                    </button>
                     <button class="quick-btn" onclick="handleQuickAction('help')">
                         <i class="fas fa-question-circle"></i>
                         Help
+                    </button>
+                </div>
+
+                <!-- Associate Quick Actions (Hidden by default) -->
+                <div class="quick-actions associate-actions" id="associateActions" style="display: none;">
+                    <button class="quick-btn associate-btn" onclick="handleAssociateAction('inventory-check')">
+                        <i class="fas fa-clipboard-check"></i>
+                        Inventory Check
+                    </button>
+                    <button class="quick-btn associate-btn" onclick="handleAssociateAction('planogram-verify')">
+                        <i class="fas fa-th-large"></i>
+                        Planogram Verify
+                    </button>
+                    <button class="quick-btn associate-btn" onclick="handleAssociateAction('restock-alert')">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Restock Alerts
+                    </button>
+                    <button class="quick-btn associate-btn" onclick="handleAssociateAction('aisle-audit')">
+                        <i class="fas fa-tasks"></i>
+                        Aisle Audit
+                    </button>
+                    <button class="quick-btn associate-btn" onclick="handleAssociateAction('product-location')">
+                        <i class="fas fa-map-pin"></i>
+                        Product Location
+                    </button>
+                    <button class="quick-btn associate-btn" onclick="handleAssociateAction('reports')">
+                        <i class="fas fa-chart-bar"></i>
+                        Reports
                     </button>
                 </div>
 
@@ -100,13 +148,83 @@
             </div>
 
             <!-- Right Side - Hot Deals Section (40%) -->
-            <div class="deals-section">
+            <div class="deals-section" id="dealsSection">
                 <div class="deals-header">
                     <h3><i class="fas fa-star"></i> Hot Deals</h3>
                     <span class="deals-badge">Limited Time!</span>
                 </div>
                 <div class="deals-container" id="dealsGrid">
                     <!-- Hot deals will be populated here -->
+                </div>
+                
+                <!-- Social Sharing Section -->
+                <div class="social-sharing-section">
+                    <h4><i class="fas fa-share-alt"></i> Share Your Experience</h4>
+                    <div class="share-buttons">
+                        <button class="share-btn facebook" onclick="shareToSocial('facebook')">
+                            <i class="fab fa-facebook-f"></i>
+                            <span>Facebook</span>
+                        </button>
+                        <button class="share-btn twitter" onclick="shareToSocial('twitter')">
+                            <i class="fab fa-twitter"></i>
+                            <span>Twitter</span>
+                        </button>
+                        <button class="share-btn instagram" onclick="shareToSocial('instagram')">
+                            <i class="fab fa-instagram"></i>
+                            <span>Instagram</span>
+                        </button>
+                        <button class="share-btn whatsapp" onclick="shareToSocial('whatsapp')">
+                            <i class="fab fa-whatsapp"></i>
+                            <span>WhatsApp</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Associate Dashboard (Hidden by default) -->
+            <div class="associate-dashboard" id="associateDashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <h3><i class="fas fa-tachometer-alt"></i> Associate Dashboard</h3>
+                    <div class="dashboard-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-boxes"></i>
+                            <span>Low Stock: <span id="lowStockCount">12</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Alerts: <span id="alertCount">5</span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-content">
+                    <div class="dashboard-section">
+                        <h4><i class="fas fa-clipboard-list"></i> Today's Tasks</h4>
+                        <div class="task-list" id="taskList">
+                            <!-- Tasks will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-section">
+                        <h4><i class="fas fa-chart-line"></i> Quick Reports</h4>
+                        <div class="report-cards">
+                            <div class="report-card" onclick="generateReport('inventory')">
+                                <i class="fas fa-boxes"></i>
+                                <h5>Inventory Report</h5>
+                                <p>Check stock levels</p>
+                            </div>
+                            <div class="report-card" onclick="generateReport('planogram')">
+                                <i class="fas fa-th-large"></i>
+                                <h5>Planogram Status</h5>
+                                <p>Verify shelf layouts</p>
+                            </div>
+                            <div class="report-card" onclick="generateReport('sales')">
+                                <i class="fas fa-chart-bar"></i>
+                                <h5>Sales Analytics</h5>
+                                <p>View performance data</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -139,6 +257,56 @@
                     <div class="navigation-steps" id="navigationSteps">
                         <!-- Navigation steps will be inserted here -->
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Modal -->
+        <div class="share-modal" id="shareModal">
+            <div class="share-modal-content">
+                <div class="share-modal-header">
+                    <h3><i class="fas fa-share-alt"></i> Share Your Experience</h3>
+                    <p>Share your shopping achievements and deals with friends!</p>
+                </div>
+                <div class="share-preview" id="sharePreview">
+                    <!-- Share preview content will be inserted here -->
+                </div>
+                <div class="share-options">
+                    <div class="share-option" onclick="selectShareType('achievement')">
+                        <h5>🏆 Achievement</h5>
+                        <p>Share your level and points</p>
+                    </div>
+                    <div class="share-option" onclick="selectShareType('deal')">
+                        <h5>🔥 Hot Deal</h5>
+                        <p>Share amazing deals you found</p>
+                    </div>
+                    <div class="share-option" onclick="selectShareType('experience')">
+                        <h5>🎉 Experience</h5>
+                        <p>Share your shopping journey</p>
+                    </div>
+                    <div class="share-option" onclick="selectShareType('custom')">
+                        <h5>✏️ Custom</h5>
+                        <p>Write your own message</p>
+                    </div>
+                </div>
+                <div class="share-actions">
+                    <button class="share-action-btn secondary" onclick="closeShareModal()">Cancel</button>
+                    <button class="share-action-btn primary" onclick="shareContent()">Share Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Associate Modal -->
+        <div class="associate-modal" id="associateModal">
+            <div class="associate-modal-content">
+                <div class="associate-modal-header">
+                    <h2 id="associateModalTitle">Associate Tools</h2>
+                    <button class="close-btn" onclick="closeAssociateModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="associate-modal-body" id="associateModalBody">
+                    <!-- Associate content will be inserted here -->
                 </div>
             </div>
         </div>

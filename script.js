@@ -1,6 +1,15 @@
 // Global variables
 let isRecording = false;
 let recognition = null;
+let customerPoints = 0;
+let customerLevel = "New Shopper";
+let funMode = false;
+let emojiResponses = true;
+let lastInteractionTime = Date.now();
+let selectedShareType = 'achievement';
+let currentShareData = {};
+
+
 
 // Sample product database
 const products = [
@@ -187,6 +196,15 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     displayHotDeals();
     setupImageHandling();
+    loadCustomerProgress();
+    updateCustomerDisplay();
+    
+    // Show personalized welcome if returning customer
+    setTimeout(() => {
+        if (customerPoints > 0) {
+            addMessage(`🎉 Welcome back, ${customerLevel}! You have ${customerPoints} points. Keep shopping to earn more rewards!`, 'bot', 'fun-message');
+        }
+    }, 2000);
 });
 
 // Setup image handling
@@ -207,6 +225,292 @@ function setupImageHandling() {
             });
         });
     });
+}
+
+// Gamification Functions
+function addPoints(points, reason) {
+    customerPoints += points;
+    updateCustomerDisplay();
+    saveCustomerProgress();
+    
+    // Show points earned notification
+    showPointsEarned(points, reason);
+    
+    // Check for level up
+    checkLevelUp();
+}
+
+function showPointsEarned(points, reason) {
+    const notification = document.createElement('div');
+    notification.className = 'points-earned';
+    notification.innerHTML = `
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</div>
+            <div>+${points} Points!</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">${reason}</div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Create confetti effect
+    createConfetti();
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function createConfetti() {
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => {
+            confetti.remove();
+        }, 4000);
+    }
+}
+
+function checkLevelUp() {
+    const newLevel = getLevelFromPoints(customerPoints);
+    if (newLevel !== customerLevel) {
+        customerLevel = newLevel;
+        updateCustomerDisplay();
+        showLevelUpMessage();
+    }
+}
+
+function getLevelFromPoints(points) {
+    if (points >= 1000) return "Shopping Master";
+    if (points >= 500) return "Deal Hunter";
+    if (points >= 200) return "Smart Shopper";
+    if (points >= 50) return "Regular Customer";
+    return "New Shopper";
+}
+
+function showLevelUpMessage() {
+    const message = `🎊 **LEVEL UP!** 🎊\n\nCongratulations! You're now a **${customerLevel}**!\n\nKeep shopping to earn more points and unlock exclusive deals!`;
+    addMessage(message, 'bot');
+    addMessage('fun-message');
+    
+    // Auto-share achievement
+    setTimeout(() => {
+        autoShareAchievement(`Level Up to ${customerLevel}!`);
+    }, 2000);
+}
+
+function updateCustomerDisplay() {
+    const levelElement = document.getElementById('customerLevel');
+    const pointsElement = document.getElementById('customerPoints');
+    
+    if (levelElement) levelElement.textContent = customerLevel;
+    if (pointsElement) pointsElement.textContent = customerPoints;
+}
+
+function saveCustomerProgress() {
+    localStorage.setItem('customerPoints', customerPoints);
+    localStorage.setItem('customerLevel', customerLevel);
+}
+
+function loadCustomerProgress() {
+    const savedPoints = localStorage.getItem('customerPoints');
+    const savedLevel = localStorage.getItem('customerLevel');
+    
+    if (savedPoints) customerPoints = parseInt(savedPoints);
+    if (savedLevel) customerLevel = savedLevel;
+}
+
+function addFunEmojis(message) {
+    if (!emojiResponses) return message;
+    
+    const funEmojis = ['😊', '🎉', '✨', '🌟', '💫', '🎯', '🔥', '💎', '🚀', '🎪'];
+    const randomEmoji = funEmojis[Math.floor(Math.random() * funEmojis.length)];
+    
+    return `${randomEmoji} ${message}`;
+}
+
+// Social Sharing Functions
+function shareToSocial(platform) {
+    showShareModal(platform);
+}
+
+function showShareModal(platform = null) {
+    const modal = document.getElementById('shareModal');
+    const preview = document.getElementById('sharePreview');
+    
+    // Reset share options
+    document.querySelectorAll('.share-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Set default share type
+    selectedShareType = 'achievement';
+    document.querySelector('.share-option').classList.add('selected');
+    
+    // Update preview
+    updateSharePreview();
+    
+    modal.style.display = 'block';
+    
+    // Add points for sharing
+    addPoints(10, "Social sharing");
+}
+
+function selectShareType(type) {
+    selectedShareType = type;
+    
+    // Update visual selection
+    document.querySelectorAll('.share-option').classList.remove('selected');
+    event.target.closest('.share-option').classList.add('selected');
+    
+    // Update preview
+    updateSharePreview();
+}
+
+function updateSharePreview() {
+    const preview = document.getElementById('sharePreview');
+    
+    switch(selectedShareType) {
+        case 'achievement':
+            preview.innerHTML = `
+                <h4>🏆 Achievement Unlocked!</h4>
+                <p>I just reached <strong>${customerLevel}</strong> level with <strong>${customerPoints}</strong> points in the InStore Bot! 🎉</p>
+                <p>Join me and discover amazing deals while earning rewards! #InStoreBot #ShoppingRewards</p>
+            `;
+            break;
+        case 'deal':
+            const randomDeal = hotDeals[Math.floor(Math.random() * hotDeals.length)];
+            preview.innerHTML = `
+                <h4>🔥 Amazing Deal Found!</h4>
+                <p>Just found <strong>${randomDeal.name}</strong> on sale for <strong>$${randomDeal.discountedPrice}</strong> (${randomDeal.discount}% off)! 💰</p>
+                <p>Thanks to InStore Bot for helping me discover this great deal! #HotDeals #InStoreBot</p>
+            `;
+            break;
+        case 'experience':
+            preview.innerHTML = `
+                <h4>🎉 Shopping Made Fun!</h4>
+                <p>Having an amazing shopping experience with InStore Bot! Found great deals, earned points, and got personalized assistance! 🛒</p>
+                <p>This AI shopping assistant is a game-changer! #SmartShopping #InStoreBot</p>
+            `;
+            break;
+        case 'custom':
+            preview.innerHTML = `
+                <h4>✏️ Custom Message</h4>
+                <p>Share your own shopping experience and achievements with friends!</p>
+                <textarea id="customMessage" placeholder="Write your message here..." style="width: 100%; min-height: 80px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 0.75rem; color: white; font-family: inherit; resize: vertical;"></textarea>
+            `;
+            break;
+    }
+}
+
+function shareContent() {
+    const preview = document.getElementById('sharePreview');
+    let message = '';
+    
+    switch(selectedShareType) {
+        case 'achievement':
+            message = `🏆 Achievement Unlocked! I just reached ${customerLevel} level with ${customerPoints} points in the InStore Bot! 🎉 Join me and discover amazing deals while earning rewards! #InStoreBot #ShoppingRewards`;
+            break;
+        case 'deal':
+            const randomDeal = hotDeals[Math.floor(Math.random() * hotDeals.length)];
+            message = `🔥 Amazing Deal Found! Just found ${randomDeal.name} on sale for $${randomDeal.discountedPrice} (${randomDeal.discount}% off)! 💰 Thanks to InStore Bot for helping me discover this great deal! #HotDeals #InStoreBot`;
+            break;
+        case 'experience':
+            message = `🎉 Shopping Made Fun! Having an amazing shopping experience with InStore Bot! Found great deals, earned points, and got personalized assistance! 🛒 This AI shopping assistant is a game-changer! #SmartShopping #InStoreBot`;
+            break;
+        case 'custom':
+            const customText = document.getElementById('customMessage')?.value || '';
+            message = customText || 'Check out this amazing shopping experience with InStore Bot! #InStoreBot';
+            break;
+    }
+    
+    // Share to multiple platforms
+    shareToMultiplePlatforms(message);
+    
+    // Close modal
+    closeShareModal();
+    
+    // Show success message
+    addMessage(`🎉 Shared successfully! Thanks for spreading the word about InStore Bot!`, 'bot', 'fun-message');
+    addPoints(15, "Content shared");
+}
+
+function shareToMultiplePlatforms(message) {
+    const encodedMessage = encodeURIComponent(message);
+    const url = encodeURIComponent(window.location.href);
+    
+    // Facebook
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${encodedMessage}`;
+    
+    // Twitter
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedMessage}&url=${url}`;
+    
+    // WhatsApp
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}%20${url}`;
+    
+    // LinkedIn
+    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+    
+    // Open sharing windows
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+    setTimeout(() => {
+        window.open(twitterUrl, '_blank', 'width=600,height=400');
+    }, 500);
+    setTimeout(() => {
+        window.open(whatsappUrl, '_blank', 'width=600,height=400');
+    }, 1000);
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').style.display = 'none';
+}
+
+// Share specific deal
+function shareDeal(dealId) {
+    const deal = hotDeals.find(d => d.id === dealId);
+    if (!deal) return;
+    
+    const message = `🔥 Amazing Deal Found! Just found ${deal.name} on sale for $${deal.discountedPrice} (${deal.discount}% off)! 💰 Thanks to InStore Bot for helping me discover this great deal! #HotDeals #InStoreBot`;
+    
+    shareToMultiplePlatforms(message);
+    addPoints(10, "Deal shared");
+    
+    // Show success message
+    addMessage(`🎉 Shared the ${deal.name} deal! Thanks for spreading the word!`, 'bot', 'fun-message');
+}
+
+// Auto-share achievements
+function autoShareAchievement(achievement) {
+    const message = `🎉 ${achievement}! Just reached ${customerLevel} with ${customerPoints} points in InStore Bot! #ShoppingRewards #InStoreBot`;
+    
+    // Show auto-share notification
+    const notification = document.createElement('div');
+    notification.className = 'points-earned';
+    notification.innerHTML = `
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📱</div>
+            <div>Auto-share your achievement?</div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">
+                <button onclick="shareToMultiplePlatforms('${message}'); this.parentElement.parentElement.remove();" style="background: #667eea; border: none; color: white; padding: 0.5rem 1rem; border-radius: 15px; margin-right: 0.5rem; cursor: pointer;">Share</button>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 15px; cursor: pointer;">Later</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 8000);
 }
 
 // Setup event listeners
@@ -270,10 +574,10 @@ function sendMessage() {
 }
 
 // Add message to chat
-function addMessage(content, sender) {
+function addMessage(content, sender, className = '') {
     const chatMessages = document.getElementById('chatMessages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
+    messageDiv.className = `message ${sender}-message ${className}`;
     
     const avatar = sender === 'bot' ? 'fas fa-robot' : 'fas fa-user';
     const avatarBg = sender === 'bot' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
@@ -332,22 +636,33 @@ function hideTypingIndicator() {
 function processUserMessage(message) {
     const lowerMessage = message.toLowerCase();
     
+    // Add points for interaction
+    addPoints(5, "Daily interaction");
+    
     // Check for different types of requests
     if (lowerMessage.includes('search') || lowerMessage.includes('find') || lowerMessage.includes('looking for')) {
         handleProductSearch(message);
+        addPoints(10, "Product search");
     } else if (lowerMessage.includes('inventory') || lowerMessage.includes('stock') || lowerMessage.includes('available')) {
         handleInventoryCheck(message);
+        addPoints(8, "Inventory check");
     } else if (lowerMessage.includes('aisle') || lowerMessage.includes('where') || lowerMessage.includes('location')) {
         handleNavigationRequest(message);
+        addPoints(12, "Navigation help");
     } else if (lowerMessage.includes('deal') || lowerMessage.includes('sale') || lowerMessage.includes('discount') || lowerMessage.includes('offer')) {
         handleHotDealsRequest(message);
+        addPoints(15, "Deal exploration");
     } else if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
         showHelp();
+        addPoints(5, "Help request");
+    } else if (lowerMessage.includes('fun') || lowerMessage.includes('game') || lowerMessage.includes('points')) {
+        handleFunRequest(message);
     } else {
         // Try to find products by name
         const foundProducts = searchProducts(message);
         if (foundProducts.length > 0) {
             showProductResults(foundProducts, message);
+            addPoints(10, "Product found");
         } else {
             showDefaultResponse(message);
         }
@@ -619,7 +934,12 @@ function showHelp() {
 📦 **Inventory Check**: "Check stock of foundation" or "How many razors do you have?"
 🗺️ **Navigation**: "Where is the razor?" or "Take me to aisle 3"
 🔥 **Hot Deals**: "Show me deals" or "What's on sale?"
+🎮 **Fun Mode**: "Show me my points" or "Let's play a game"
 ℹ️ **Product Info**: Ask about any product for detailed information
+
+🎯 **Earn Points**: Every interaction earns you points and helps you level up!
+🏆 **Level System**: Progress from New Shopper to Shopping Master
+🎉 **Celebrations**: Enjoy confetti and animations when you achieve goals
 
 You can also use the quick action buttons below for faster access!
 
@@ -676,9 +996,14 @@ function displayHotDeals() {
             </div>
             <div class="deal-footer">
                 <span class="stock-status">${deal.stock} in stock</span>
-                <button class="view-details-btn" onclick="event.stopPropagation(); showDealDetails('${deal.id}')">
-                    View Details
-                </button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="view-details-btn" onclick="event.stopPropagation(); showDealDetails('${deal.id}')">
+                        View Details
+                    </button>
+                    <button class="share-deal-btn" onclick="event.stopPropagation(); shareDeal('${deal.id}')" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem 0.75rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.3s ease;">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
             </div>
         `;
         
@@ -690,6 +1015,9 @@ function displayHotDeals() {
 function showDealDetails(dealId) {
     const deal = typeof dealId === 'string' ? hotDeals.find(d => d.id === dealId) : dealId;
     if (!deal) return;
+    
+    // Add points for viewing deal details
+    addPoints(20, "Deal exploration");
     
     const modal = document.getElementById('productModal');
     const modalTitle = document.getElementById('modalTitle');
@@ -827,6 +1155,9 @@ function handleQuickAction(action) {
         case 'deals':
             showHotDealsMessage();
             break;
+        case 'fun':
+            showFunFeatures();
+            break;
         case 'help':
             showHelp();
             break;
@@ -849,6 +1180,131 @@ function handleHotDealsRequest(message) {
     } else {
         showHotDealsMessage();
     }
+}
+
+// Handle fun requests
+function handleFunRequest(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('points') || lowerMessage.includes('score')) {
+        showPointsInfo();
+    } else if (lowerMessage.includes('level') || lowerMessage.includes('rank')) {
+        showLevelInfo();
+    } else if (lowerMessage.includes('game') || lowerMessage.includes('play')) {
+        startMiniGame();
+    } else if (lowerMessage.includes('fun') || lowerMessage.includes('entertain')) {
+        showFunFeatures();
+    } else {
+        showFunFeatures();
+    }
+}
+
+// Show points information
+function showPointsInfo() {
+    const message = `🎯 **Your Shopping Stats** 🎯
+
+💰 **Points**: ${customerPoints}
+⭐ **Level**: ${customerLevel}
+🎪 **Status**: ${getFunStatus()}
+
+**How to earn more points:**
+• Search products: +10 points
+• Check inventory: +8 points  
+• Get navigation help: +12 points
+• Explore deals: +15 points
+• Daily interactions: +5 points
+
+Keep shopping to level up and unlock exclusive rewards! 🚀`;
+    
+    addMessage(message, 'bot', 'fun-message');
+    addPoints(5, "Stats check");
+}
+
+// Show level information
+function showLevelInfo() {
+    const nextLevel = getNextLevel();
+    const pointsNeeded = getPointsForNextLevel();
+    
+    const message = `🏆 **Level Information** 🏆
+
+**Current Level**: ${customerLevel}
+**Next Level**: ${nextLevel}
+**Points Needed**: ${pointsNeeded} more points
+
+**Level Benefits:**
+• New Shopper: Basic assistance
+• Regular Customer: +5% bonus points
+• Smart Shopper: Priority support
+• Deal Hunter: Exclusive deals
+• Shopping Master: VIP treatment
+
+You're doing great! Keep it up! 🌟`;
+    
+    addMessage(message, 'bot', 'fun-message');
+    addPoints(5, "Level check");
+}
+
+// Start a mini game
+function startMiniGame() {
+    const games = [
+        "🎲 **Shopping Trivia**: What's the best time to shop for deals?",
+        "🎯 **Product Guessing**: I'll describe a product, you guess what it is!",
+        "🎪 **Deal Hunt**: Find the best deal in our store!",
+        "🎨 **Beauty Quiz**: Test your beauty product knowledge!"
+    ];
+    
+    const randomGame = games[Math.floor(Math.random() * games.length)];
+    const message = `🎮 **Let's Play!** 🎮\n\n${randomGame}\n\nSay 'yes' to start the game!`;
+    
+    addMessage(message, 'bot', 'fun-message');
+    addPoints(10, "Game started");
+}
+
+// Show fun features
+function showFunFeatures() {
+    const message = `🎪 **Fun Features Available!** 🎪
+
+🎯 **Points System**: Earn points for every interaction
+🏆 **Level Up**: Progress through shopping ranks
+🎮 **Mini Games**: Play shopping trivia and games
+🎉 **Celebrations**: Confetti and animations
+🌟 **Achievements**: Unlock special rewards
+
+Try saying:
+• "Show me my points"
+• "What's my level?"
+• "Let's play a game"
+• "Tell me a joke"
+
+Have fun shopping! 🚀`;
+    
+    addMessage(message, 'bot', 'fun-message');
+    addPoints(5, "Fun features explored");
+}
+
+// Helper functions
+function getFunStatus() {
+    if (customerPoints >= 1000) return "Shopping Legend";
+    if (customerPoints >= 500) return "Deal Master";
+    if (customerPoints >= 200) return "Smart Buyer";
+    if (customerPoints >= 50) return "Regular Shopper";
+    return "New Explorer";
+}
+
+function getNextLevel() {
+    if (customerPoints < 50) return "Regular Customer";
+    if (customerPoints < 200) return "Smart Shopper";
+    if (customerPoints < 500) return "Deal Hunter";
+    if (customerPoints < 1000) return "Shopping Master";
+    return "Maximum Level!";
+}
+
+function getPointsForNextLevel() {
+    if (customerPoints < 50) return 50 - customerPoints;
+    if (customerPoints < 200) return 200 - customerPoints;
+    if (customerPoints < 500) return 500 - customerPoints;
+    if (customerPoints < 1000) return 1000 - customerPoints;
+    return 0;
 }
 
 // Show hot deals message
@@ -896,6 +1352,7 @@ function getCurrentTime() {
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('productModal');
     const navigationOverlay = document.getElementById('navigationOverlay');
+    const shareModal = document.getElementById('shareModal');
     
     if (event.target === modal) {
         closeModal();
@@ -903,6 +1360,10 @@ window.addEventListener('click', function(event) {
     
     if (event.target === navigationOverlay) {
         closeNavigation();
+    }
+    
+    if (event.target === shareModal) {
+        closeShareModal();
     }
 });
 
@@ -913,3 +1374,497 @@ document.addEventListener('keydown', function(event) {
         closeNavigation();
     }
 }); 
+
+// Associate Mode State
+let isAssociateMode = false;
+let associateTasks = [
+    { id: 1, title: "Check Aisle 3 Inventory", description: "Verify stock levels for beauty products", priority: "high", completed: false },
+    { id: 2, title: "Planogram Verification", description: "Confirm shelf layouts match planogram", priority: "medium", completed: false },
+    { id: 3, title: "Restock Alert Review", description: "Review and process restock alerts", priority: "high", completed: false },
+    { id: 4, title: "Aisle 7 Audit", description: "Complete end-of-day aisle audit", priority: "low", completed: false }
+];
+
+let inventoryData = [
+    { id: 1, name: "L'Oreal Paris Foundation", aisle: "Aisle 3", shelf: "Shelf B", current: 5, min: 10, max: 50, status: "low" },
+    { id: 2, name: "Maybelline Mascara", aisle: "Aisle 3", shelf: "Shelf C", current: 0, min: 5, max: 30, status: "out" },
+    { id: 3, name: "Neutrogena Face Wash", aisle: "Aisle 3", shelf: "Shelf A", current: 25, min: 8, max: 40, status: "ok" },
+    { id: 4, name: "CoverGirl Lipstick", aisle: "Aisle 3", shelf: "Shelf D", current: 3, min: 6, max: 25, status: "low" },
+    { id: 5, name: "Revlon Nail Polish", aisle: "Aisle 3", shelf: "Shelf E", current: 15, min: 10, max: 35, status: "ok" }
+];
+
+let planogramData = [
+    { id: 1, aisle: "Aisle 3", section: "Foundation", status: "correct", lastVerified: "2024-01-15" },
+    { id: 2, aisle: "Aisle 3", section: "Mascara", status: "incorrect", lastVerified: "2024-01-14" },
+    { id: 3, aisle: "Aisle 3", section: "Skincare", status: "pending", lastVerified: "2024-01-13" },
+    { id: 4, aisle: "Aisle 3", section: "Lipstick", status: "correct", lastVerified: "2024-01-15" },
+    { id: 5, aisle: "Aisle 3", section: "Nail Care", status: "pending", lastVerified: "2024-01-12" }
+];
+
+// Mode Toggle Function
+function toggleMode() {
+    isAssociateMode = !isAssociateMode;
+    const modeBtn = document.getElementById('modeToggle');
+    const quickActions = document.getElementById('quickActions');
+    const associateActions = document.getElementById('associateActions');
+    const dealsSection = document.getElementById('dealsSection');
+    const associateDashboard = document.getElementById('associateDashboard');
+    
+    if (isAssociateMode) {
+        modeBtn.classList.add('associate-active');
+        modeBtn.innerHTML = '<i class="fas fa-shopping-cart"></i><span>Customer Mode</span>';
+        quickActions.style.display = 'none';
+        associateActions.style.display = 'flex';
+        dealsSection.style.display = 'none';
+        associateDashboard.style.display = 'block';
+        
+        // Update welcome message for associate
+        updateAssociateWelcome();
+        loadAssociateDashboard();
+        
+        // Add points for switching to associate mode
+        addPoints(50);
+        showMessage('bot', 'Welcome to Associate Mode! You now have access to inventory management and planogram verification tools. +50 points for switching modes! 🎯');
+    } else {
+        modeBtn.classList.remove('associate-active');
+        modeBtn.innerHTML = '<i class="fas fa-user-tie"></i><span>Associate Mode</span>';
+        quickActions.style.display = 'flex';
+        associateActions.style.display = 'none';
+        dealsSection.style.display = 'block';
+        associateDashboard.style.display = 'none';
+        
+        // Update welcome message for customer
+        updateCustomerWelcome();
+        
+        // Add points for switching back to customer mode
+        addPoints(25);
+        showMessage('bot', 'Welcome back to Customer Mode! You can now browse deals and get shopping assistance. +25 points for switching back! 🛍️');
+    }
+}
+
+// Update Associate Welcome Message
+function updateAssociateWelcome() {
+    const chatMessages = document.getElementById('chatMessages');
+    const welcomeMessage = chatMessages.querySelector('.bot-message .message-bubble');
+    
+    if (welcomeMessage) {
+        welcomeMessage.innerHTML = `
+            <h3>👨‍💼 Welcome to Associate Mode!</h3>
+            <p>I'm your store management assistant. I can help you with:</p>
+            <div class="capabilities">
+                <div class="capability">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Inventory Management</span>
+                </div>
+                <div class="capability">
+                    <i class="fas fa-th-large"></i>
+                    <span>Planogram Verification</span>
+                </div>
+                <div class="capability">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Restock Alerts</span>
+                </div>
+                <div class="capability">
+                    <i class="fas fa-tasks"></i>
+                    <span>Aisle Audits</span>
+                </div>
+            </div>
+            <p>What would you like to work on today?</p>
+        `;
+    }
+}
+
+// Update Customer Welcome Message
+function updateCustomerWelcome() {
+    const chatMessages = document.getElementById('chatMessages');
+    const welcomeMessage = chatMessages.querySelector('.bot-message .message-bubble');
+    
+    if (welcomeMessage) {
+        welcomeMessage.innerHTML = `
+            <h3>👋 Welcome to InStore Bot!</h3>
+            <p>I'm your personal shopping assistant. I can help you with:</p>
+            <div class="capabilities">
+                <div class="capability">
+                    <i class="fas fa-search"></i>
+                    <span>Product Search</span>
+                </div>
+                <div class="capability">
+                    <i class="fas fa-boxes"></i>
+                    <span>Inventory Check</span>
+                </div>
+                <div class="capability">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Product Info</span>
+                </div>
+                <div class="capability">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Aisle Navigation</span>
+                </div>
+            </div>
+            <p>What would you like to do today?</p>
+        `;
+    }
+}
+
+// Load Associate Dashboard
+function loadAssociateDashboard() {
+    loadTasks();
+    updateDashboardStats();
+}
+
+// Load Tasks
+function loadTasks() {
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = '';
+    
+    associateTasks.forEach(task => {
+        const taskItem = document.createElement('div');
+        taskItem.className = `task-item ${task.priority}`;
+        taskItem.onclick = () => handleTaskClick(task);
+        
+        taskItem.innerHTML = `
+            <h5>${task.title}</h5>
+            <p>${task.description}</p>
+            <div class="task-meta">
+                <span class="priority ${task.priority}">${task.priority.toUpperCase()}</span>
+                <span class="status ${task.completed ? 'completed' : 'pending'}">${task.completed ? '✓ Completed' : '⏳ Pending'}</span>
+            </div>
+        `;
+        
+        taskList.appendChild(taskItem);
+    });
+}
+
+// Handle Task Click
+function handleTaskClick(task) {
+    showMessage('bot', `Opening task: ${task.title}. Let me help you with that! 📋`);
+    
+    switch (task.id) {
+        case 1:
+            handleAssociateAction('inventory-check');
+            break;
+        case 2:
+            handleAssociateAction('planogram-verify');
+            break;
+        case 3:
+            handleAssociateAction('restock-alert');
+            break;
+        case 4:
+            handleAssociateAction('aisle-audit');
+            break;
+    }
+}
+
+// Update Dashboard Stats
+function updateDashboardStats() {
+    const lowStockCount = inventoryData.filter(item => item.status === 'low' || item.status === 'out').length;
+    const alertCount = planogramData.filter(item => item.status === 'incorrect').length;
+    
+    document.getElementById('lowStockCount').textContent = lowStockCount;
+    document.getElementById('alertCount').textContent = alertCount;
+}
+
+// Handle Associate Actions
+function handleAssociateAction(action) {
+    switch (action) {
+        case 'inventory-check':
+            showInventoryCheck();
+            break;
+        case 'planogram-verify':
+            showPlanogramVerification();
+            break;
+        case 'restock-alert':
+            showRestockAlerts();
+            break;
+        case 'aisle-audit':
+            showAisleAudit();
+            break;
+        case 'product-location':
+            showProductLocation();
+            break;
+        case 'reports':
+            showReports();
+            break;
+    }
+}
+
+// Show Inventory Check
+function showInventoryCheck() {
+    const modal = document.getElementById('associateModal');
+    const modalTitle = document.getElementById('associateModalTitle');
+    const modalBody = document.getElementById('associateModalBody');
+    
+    modalTitle.textContent = 'Inventory Check - Aisle 3';
+    modalBody.innerHTML = `
+        <div class="inventory-check">
+            <h4>Current Inventory Status</h4>
+            ${inventoryData.map(item => `
+                <div class="inventory-item ${item.status}">
+                    <h4>${item.name}</h4>
+                    <div class="inventory-details">
+                        <div class="inventory-detail">
+                            <span>Location:</span>
+                            <span>${item.aisle}, ${item.shelf}</span>
+                        </div>
+                        <div class="inventory-detail">
+                            <span>Current Stock:</span>
+                            <span>${item.current} units</span>
+                        </div>
+                        <div class="inventory-detail">
+                            <span>Min Level:</span>
+                            <span>${item.min} units</span>
+                        </div>
+                        <div class="inventory-detail">
+                            <span>Max Level:</span>
+                            <span>${item.max} units</span>
+                        </div>
+                    </div>
+                    <div class="inventory-status">
+                        <span class="status-badge ${item.status}">
+                            ${item.status === 'ok' ? '✓ In Stock' : 
+                              item.status === 'low' ? '⚠ Low Stock' : '❌ Out of Stock'}
+                        </span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    addPoints(30);
+}
+
+// Show Planogram Verification
+function showPlanogramVerification() {
+    const modal = document.getElementById('associateModal');
+    const modalTitle = document.getElementById('associateModalTitle');
+    const modalBody = document.getElementById('associateModalBody');
+    
+    modalTitle.textContent = 'Planogram Verification - Aisle 3';
+    modalBody.innerHTML = `
+        <div class="planogram-verify">
+            <h4>Planogram Status Check</h4>
+            ${planogramData.map(item => `
+                <div class="planogram-item">
+                    <h4>${item.section}</h4>
+                    <div class="planogram-status">
+                        <div class="status-indicator ${item.status}"></div>
+                        <span>Status: ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}</span>
+                        <span class="last-verified">Last verified: ${item.lastVerified}</span>
+                    </div>
+                    <div class="planogram-actions">
+                        <button class="planogram-btn verify" onclick="verifyPlanogram(${item.id})">
+                            <i class="fas fa-check"></i> Verify
+                        </button>
+                        <button class="planogram-btn flag" onclick="flagPlanogram(${item.id})">
+                            <i class="fas fa-flag"></i> Flag Issue
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    addPoints(25);
+}
+
+// Show Restock Alerts
+function showRestockAlerts() {
+    const modal = document.getElementById('associateModal');
+    const modalTitle = document.getElementById('associateModalTitle');
+    const modalBody = document.getElementById('associateModalBody');
+    
+    const lowStockItems = inventoryData.filter(item => item.status === 'low' || item.status === 'out');
+    
+    modalTitle.textContent = 'Restock Alerts';
+    modalBody.innerHTML = `
+        <div class="restock-alerts">
+            <h4>Items Requiring Attention</h4>
+            ${lowStockItems.map(item => `
+                <div class="alert-item ${item.status}">
+                    <h4>${item.name}</h4>
+                    <p><strong>Current Stock:</strong> ${item.current} units</p>
+                    <p><strong>Minimum Required:</strong> ${item.min} units</p>
+                    <p><strong>Location:</strong> ${item.aisle}, ${item.shelf}</p>
+                    <div class="alert-actions">
+                        <button class="alert-btn restock" onclick="processRestock(${item.id})">
+                            <i class="fas fa-boxes"></i> Process Restock
+                        </button>
+                        <button class="alert-btn order" onclick="placeOrder(${item.id})">
+                            <i class="fas fa-shopping-cart"></i> Place Order
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    addPoints(40);
+}
+
+// Show Aisle Audit
+function showAisleAudit() {
+    const modal = document.getElementById('associateModal');
+    const modalTitle = document.getElementById('associateModalTitle');
+    const modalBody = document.getElementById('associateModalBody');
+    
+    modalTitle.textContent = 'Aisle 7 Audit';
+    modalBody.innerHTML = `
+        <div class="aisle-audit">
+            <h4>End-of-Day Aisle Audit Checklist</h4>
+            <div class="audit-checklist">
+                <div class="audit-item">
+                    <input type="checkbox" id="audit1">
+                    <label for="audit1">All products properly faced and aligned</label>
+                </div>
+                <div class="audit-item">
+                    <input type="checkbox" id="audit2">
+                    <label for="audit2">Price tags are visible and accurate</label>
+                </div>
+                <div class="audit-item">
+                    <input type="checkbox" id="audit3">
+                    <label for="audit3">No expired products on shelves</label>
+                </div>
+                <div class="audit-item">
+                    <input type="checkbox" id="audit4">
+                    <label for="audit4">Aisle is clean and organized</label>
+                </div>
+                <div class="audit-item">
+                    <input type="checkbox" id="audit5">
+                    <label for="audit5">Security tags are properly applied</label>
+                </div>
+            </div>
+            <div class="audit-actions">
+                <button class="audit-btn complete" onclick="completeAudit()">
+                    <i class="fas fa-check-circle"></i> Complete Audit
+                </button>
+                <button class="audit-btn save" onclick="saveAudit()">
+                    <i class="fas fa-save"></i> Save Progress
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    addPoints(35);
+}
+
+// Show Product Location
+function showProductLocation() {
+    showMessage('bot', 'Product Location Tool activated! 📍 What product are you looking for?');
+    addPoints(15);
+}
+
+// Show Reports
+function showReports() {
+    const modal = document.getElementById('associateModal');
+    const modalTitle = document.getElementById('associateModalTitle');
+    const modalBody = document.getElementById('associateModalBody');
+    
+    modalTitle.textContent = 'Reports Dashboard';
+    modalBody.innerHTML = `
+        <div class="reports-dashboard">
+            <h4>Available Reports</h4>
+            <div class="report-options">
+                <div class="report-option" onclick="generateReport('inventory')">
+                    <i class="fas fa-boxes"></i>
+                    <h5>Inventory Report</h5>
+                    <p>Detailed stock levels and trends</p>
+                </div>
+                <div class="report-option" onclick="generateReport('planogram')">
+                    <i class="fas fa-th-large"></i>
+                    <h5>Planogram Compliance</h5>
+                    <p>Shelf layout verification status</p>
+                </div>
+                <div class="report-option" onclick="generateReport('sales')">
+                    <i class="fas fa-chart-line"></i>
+                    <h5>Sales Analytics</h5>
+                    <p>Performance metrics and trends</p>
+                </div>
+                <div class="report-option" onclick="generateReport('tasks')">
+                    <i class="fas fa-tasks"></i>
+                    <h5>Task Completion</h5>
+                    <p>Associate productivity metrics</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    addPoints(20);
+}
+
+// Generate Report
+function generateReport(type) {
+    showMessage('bot', `Generating ${type} report... 📊 This may take a moment.`);
+    
+    setTimeout(() => {
+        showMessage('bot', `${type.charAt(0).toUpperCase() + type.slice(1)} report generated successfully! 📈 Check your email for the detailed report.`);
+        addPoints(50);
+        closeAssociateModal();
+    }, 2000);
+}
+
+// Verify Planogram
+function verifyPlanogram(id) {
+    const item = planogramData.find(item => item.id === id);
+    if (item) {
+        item.status = 'correct';
+        item.lastVerified = new Date().toISOString().split('T')[0];
+        showMessage('bot', `Planogram for ${item.section} verified as correct! ✅`);
+        addPoints(25);
+        closeAssociateModal();
+        showPlanogramVerification(); // Refresh the view
+    }
+}
+
+// Flag Planogram
+function flagPlanogram(id) {
+    const item = planogramData.find(item => item.id === id);
+    if (item) {
+        item.status = 'incorrect';
+        showMessage('bot', `Planogram issue flagged for ${item.section}. A supervisor will be notified. 🚨`);
+        addPoints(15);
+    }
+}
+
+// Process Restock
+function processRestock(id) {
+    const item = inventoryData.find(item => item.id === id);
+    if (item) {
+        item.current = item.max;
+        item.status = 'ok';
+        showMessage('bot', `Restock processed for ${item.name}. Stock updated to ${item.max} units. 📦`);
+        addPoints(30);
+        closeAssociateModal();
+        showRestockAlerts(); // Refresh the view
+    }
+}
+
+// Place Order
+function placeOrder(id) {
+    const item = inventoryData.find(item => item.id === id);
+    if (item) {
+        showMessage('bot', `Order placed for ${item.name}. Expected delivery in 2-3 business days. 📋`);
+        addPoints(20);
+    }
+}
+
+// Complete Audit
+function completeAudit() {
+    showMessage('bot', 'Aisle 7 audit completed successfully! All checklist items verified. ✅');
+    addPoints(100);
+    closeAssociateModal();
+}
+
+// Save Audit
+function saveAudit() {
+    showMessage('bot', 'Audit progress saved. You can continue later. 💾');
+    addPoints(25);
+}
+
+// Close Associate Modal
+function closeAssociateModal() {
+    document.getElementById('associateModal').style.display = 'none';
+} 
