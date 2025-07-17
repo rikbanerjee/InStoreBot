@@ -88,7 +88,7 @@ const hotDeals = [
         shelf: "2",
         stock: 25,
         description: "Volumizing and lengthening mascara that gives you sky-high lashes. Waterproof formula lasts all day.",
-        image: "👁️",
+        image: "https://images.target.com/is/image/Target/GUEST_7e2e2e2e-7e2e-4e2e-8e2e-7e2e2e2e2e2e?wid=488&hei=488&fmt=pjpeg",
         imageUrl: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&crop=center&auto=format",
         features: ["Volumizing", "Waterproof", "Long-lasting"],
         tags: ["mascara", "volumizing", "waterproof", "lengthening"],
@@ -105,7 +105,7 @@ const hotDeals = [
         shelf: "3",
         stock: 18,
         description: "Broad spectrum SPF 50+ sunscreen with lightweight, non-greasy formula. Perfect for daily use.",
-        image: "☀️",
+        image: "https://images.ulta.com/is/image/Ulta/2151362",
         imageUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&crop=center&auto=format",
         features: ["SPF 50+", "Non-greasy", "Broad spectrum"],
         tags: ["sunscreen", "spf", "protection", "lightweight"],
@@ -122,7 +122,7 @@ const hotDeals = [
         shelf: "1",
         stock: 12,
         description: "Buildable coverage foundation that matches your skin tone perfectly. Natural finish for everyday wear.",
-        image: "🎨",
+        image: "https://images.ulta.com/is/image/Ulta/2558752",
         imageUrl: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&crop=center",
         features: ["Buildable", "Natural finish", "True match"],
         tags: ["foundation", "buildable", "natural", "everyday"],
@@ -139,7 +139,7 @@ const hotDeals = [
         shelf: "4",
         stock: 30,
         description: "Hydrating face and body moisturizer with ceramides and hyaluronic acid. Suitable for all skin types.",
-        image: "🧴",
+        image: "https://images.ulta.com/is/image/Ulta/2283603",
         imageUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&crop=center",
         features: ["Hydrating", "Ceramides", "All skin types"],
         tags: ["moisturizer", "hydrating", "ceramides", "sensitive"],
@@ -156,7 +156,7 @@ const hotDeals = [
         shelf: "5",
         stock: 22,
         description: "Matte liquid lipstick with long-lasting color. Comfortable formula that doesn't dry out your lips.",
-        image: "💋",
+        image: "https://images.ulta.com/is/image/Ulta/2506612",
         imageUrl: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&crop=center",
         features: ["Matte finish", "Long-lasting", "Comfortable"],
         tags: ["lipstick", "matte", "long-lasting", "liquid"],
@@ -173,7 +173,7 @@ const hotDeals = [
         shelf: "6",
         stock: 15,
         description: "High-strength vitamin and mineral blemish formula. Reduces blemishes and balances sebum activity.",
-        image: "✨",
+        image: "https://images.ulta.com/is/image/Ulta/2551392",
         imageUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&crop=center",
         features: ["Blemish control", "Sebum balance", "Vitamin B3"],
         tags: ["serum", "niacinamide", "blemish", "skincare"],
@@ -971,16 +971,23 @@ function displayHotDeals() {
         const dealCard = document.createElement('div');
         dealCard.className = 'deal-card';
         dealCard.onclick = () => showDealDetails(deal);
-        
+
+        // Determine fallback content: image tag if URL, emoji otherwise
+        let fallbackContent = '';
+        if (deal.image && deal.image.startsWith('http')) {
+            fallbackContent = `<img src="${deal.image}" alt="${deal.name}" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;">`;
+        } else {
+            fallbackContent = deal.image;
+        }
+
         dealCard.innerHTML = `
             <div class="deal-header">
                 <div class="product-image-container">
                     <img src="${deal.imageUrl}" alt="${deal.name}" class="product-real-image loading" onload="this.classList.remove('loading')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="product-image-fallback">
-                        ${deal.image}
-                        <div class="discount-badge">-${deal.discount}%</div>
+                    <div class="product-image-fallback" style="display:none;">
+                        ${fallbackContent}
                     </div>
-                    <div class="discount-badge" style="display: ${deal.imageUrl ? 'block' : 'none'};">-${deal.discount}%</div>
+                    <div class="discount-badge">-${deal.discount}%</div>
                 </div>
                 <div class="deal-info">
                     <h4>${deal.name}</h4>
@@ -992,15 +999,15 @@ function displayHotDeals() {
             </div>
             <div class="deal-description">${deal.description}</div>
             <div class="deal-features">
-                ${deal.features.map(feature => `<span class="deal-feature">${feature}</span>`).join('')}
+                ${deal.features.slice(0, 3).map(feature => `<span class="deal-feature">${feature}</span>`).join('')}
             </div>
             <div class="deal-footer">
                 <span class="stock-status">${deal.stock} in stock</span>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="view-details-btn" onclick="event.stopPropagation(); showDealDetails('${deal.id}')">
-                        View Details
+                        Details
                     </button>
-                    <button class="share-deal-btn" onclick="event.stopPropagation(); shareDeal('${deal.id}')" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem 0.75rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.3s ease;">
+                    <button class="share-deal-btn" onclick="event.stopPropagation(); shareDeal('${deal.id}')" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.4rem 0.6rem; border-radius: 20px; font-size: 0.7rem; cursor: pointer; transition: all 0.3s ease;">
                         <i class="fas fa-share-alt"></i>
                     </button>
                 </div>
@@ -1508,30 +1515,147 @@ function updateCustomerWelcome() {
 // Load Associate Dashboard
 function loadAssociateDashboard() {
     loadTasks();
+    loadAlerts();
     updateDashboardStats();
 }
 
 // Load Tasks
 function loadTasks() {
     const taskList = document.getElementById('taskList');
-    taskList.innerHTML = '';
+    if (!taskList) return;
     
-    associateTasks.forEach(task => {
-        const taskItem = document.createElement('div');
-        taskItem.className = `task-item ${task.priority}`;
-        taskItem.onclick = () => handleTaskClick(task);
-        
-        taskItem.innerHTML = `
-            <h5>${task.title}</h5>
-            <p>${task.description}</p>
-            <div class="task-meta">
-                <span class="priority ${task.priority}">${task.priority.toUpperCase()}</span>
-                <span class="status ${task.completed ? 'completed' : 'pending'}">${task.completed ? '✓ Completed' : '⏳ Pending'}</span>
+    const tasks = [
+        { 
+            id: 1, 
+            title: "Complete inventory check for Aisle 3 - Pharmacy", 
+            status: "pending", 
+            priority: "high",
+            time: "Due in 2 hours",
+            icon: "fas fa-pills"
+        },
+        { 
+            id: 2, 
+            title: "Restock beauty products in Aisle 4", 
+            status: "in-progress", 
+            priority: "medium",
+            time: "In progress",
+            icon: "fas fa-spa"
+        },
+        { 
+            id: 3, 
+            title: "Update planogram for Aisle 1 - Personal Care", 
+            status: "pending", 
+            priority: "low",
+            time: "Due today",
+            icon: "fas fa-th-large"
+        },
+        { 
+            id: 4, 
+            title: "Customer service training completion", 
+            status: "completed", 
+            priority: "medium",
+            time: "Completed",
+            icon: "fas fa-graduation-cap"
+        },
+        { 
+            id: 5, 
+            title: "End of day sales report", 
+            status: "pending", 
+            priority: "high",
+            time: "Due in 4 hours",
+            icon: "fas fa-chart-line"
+        },
+        { 
+            id: 6, 
+            title: "Aisle 2 audit - Snacks section", 
+            status: "pending", 
+            priority: "medium",
+            time: "Overdue",
+            icon: "fas fa-clipboard-check"
+        },
+        { 
+            id: 7, 
+            title: "Update product pricing labels", 
+            status: "pending", 
+            priority: "low",
+            time: "Due tomorrow",
+            icon: "fas fa-tags"
+        },
+        { 
+            id: 8, 
+            title: "Safety inspection - Back room", 
+            status: "pending", 
+            priority: "high",
+            time: "Due in 1 hour",
+            icon: "fas fa-shield-alt"
+        }
+    ];
+    
+    taskList.innerHTML = tasks.map(task => `
+        <div class="task-item" style="
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+            <div style="
+                width: 40px;
+                height: 40px;
+                background: ${task.status === 'completed' ? '#28a745' : task.status === 'in-progress' ? '#ffc107' : '#6c757d'};
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1rem;
+            ">
+                <i class="${task.icon}"></i>
             </div>
-        `;
-        
-        taskList.appendChild(taskItem);
-    });
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #333; font-weight: 600;">${task.title}</h4>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="
+                        background: ${task.priority === 'high' ? '#dc3545' : task.priority === 'medium' ? '#ffc107' : '#28a745'};
+                        color: white;
+                        padding: 0.2rem 0.6rem;
+                        border-radius: 12px;
+                        font-size: 0.7rem;
+                        font-weight: 600;
+                    ">${task.priority.toUpperCase()}</span>
+                    <span style="
+                        background: ${task.status === 'completed' ? '#28a745' : task.status === 'in-progress' ? '#ffc107' : '#6c757d'};
+                        color: white;
+                        padding: 0.2rem 0.6rem;
+                        border-radius: 12px;
+                        font-size: 0.7rem;
+                        font-weight: 600;
+                    ">${task.status.toUpperCase()}</span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.8rem; color: #6c757d; font-weight: 500;">${task.time}</span>
+                <button style="
+                    background: #dc004e;
+                    color: white;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    margin-top: 0.5rem;
+                    transition: background 0.3s ease;
+                " onmouseover="this.style.background='#b71c1c'" onmouseout="this.style.background='#dc004e'">
+                    ${task.status === 'completed' ? 'View' : 'Start'}
+                </button>
+            </div>
+        </div>
+    `).join('');
 }
 
 // Handle Task Click
@@ -1867,4 +1991,117 @@ function saveAudit() {
 // Close Associate Modal
 function closeAssociateModal() {
     document.getElementById('associateModal').style.display = 'none';
+}
+
+// Switch service tabs in associate dashboard
+function switchServiceTab(tab) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.service-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Add active class to clicked tab
+    event.target.closest('.service-nav-item').classList.add('active');
+    
+    // Handle tab content switching (placeholder for future implementation)
+    console.log('Switched to tab:', tab);
+    
+    // For now, just show a message
+    addMessage(`Switched to ${tab} view. This feature will be implemented in the next update.`, 'bot');
+}
+
+// Load associate dashboard with sample data
+function loadAssociateDashboard() {
+    loadTasks();
+    loadAlerts();
+    updateDashboardStats();
+}
+
+// Load sample alerts
+function loadAlerts() {
+    const alertCards = document.getElementById('alertCards');
+    if (!alertCards) return;
+    
+    const alerts = [
+        {
+            type: 'low-stock',
+            title: 'Low Stock Alert',
+            message: 'Tylenol Extra Strength (500mg) - Only 3 units remaining',
+            priority: 'high',
+            time: '2 minutes ago'
+        },
+        {
+            type: 'planogram',
+            title: 'Planogram Issue',
+            message: 'Aisle 4 - Beauty section needs verification',
+            priority: 'medium',
+            time: '15 minutes ago'
+        },
+        {
+            type: 'restock',
+            title: 'Restock Required',
+            message: 'Neutrogena Sunscreen - Out of stock in Aisle 4',
+            priority: 'high',
+            time: '1 hour ago'
+        },
+        {
+            type: 'audit',
+            title: 'Aisle Audit Due',
+            message: 'Aisle 2 - Snacks section audit overdue',
+            priority: 'medium',
+            time: '2 hours ago'
+        },
+        {
+            type: 'customer',
+            title: 'Customer Request',
+            message: 'Customer looking for specific brand of vitamins',
+            priority: 'low',
+            time: '3 hours ago'
+        }
+    ];
+    
+    alertCards.innerHTML = alerts.map(alert => `
+        <div class="alert-card" style="
+            background: white;
+            border: 1px solid #e9ecef;
+            border-left: 4px solid ${alert.priority === 'high' ? '#dc3545' : alert.priority === 'medium' ? '#ffc107' : '#28a745'};
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        " onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='translateX(0)'">
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="
+                        background: ${alert.priority === 'high' ? '#dc3545' : alert.priority === 'medium' ? '#ffc107' : '#28a745'};
+                        color: white;
+                        padding: 0.2rem 0.6rem;
+                        border-radius: 12px;
+                        font-size: 0.7rem;
+                        font-weight: 600;
+                    ">${alert.priority.toUpperCase()}</span>
+                    <h4 style="margin: 0; font-size: 1rem; font-weight: 600; color: #333;">${alert.title}</h4>
+                </div>
+                <p style="margin: 0; color: #6c757d; font-size: 0.9rem;">${alert.message}</p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.8rem; color: #6c757d;">${alert.time}</span>
+                <button style="
+                    background: #dc004e;
+                    color: white;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    margin-top: 0.5rem;
+                    transition: background 0.3s ease;
+                " onmouseover="this.style.background='#b71c1c'" onmouseout="this.style.background='#dc004e'">
+                    Handle
+                </button>
+            </div>
+        </div>
+    `).join('');
 } 
